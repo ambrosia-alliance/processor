@@ -37,15 +37,16 @@ class TherapyClassifier(pl.LightningModule):
 
     def _load_finetuned_model(self, model_path: str, device: str):
         from app.training.trainer import BARTMultiLabelClassifier
+        from app.config import settings
 
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
         self.model = BARTMultiLabelClassifier(
-            model_name=model_path,
+            model_name=settings.model_name,
             num_labels=len(self.categories)
         )
 
         state_dict_path = os.path.join(model_path, "model.pt")
-        self.model.load_state_dict(torch.load(state_dict_path, map_location=device))
+        self.model.load_state_dict(torch.load(state_dict_path, map_location=device, weights_only=True))
         self.model.to(device)
         self.model.eval()
 
