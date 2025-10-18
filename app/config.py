@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 import torch
 
 
@@ -24,6 +24,23 @@ class Settings:
         "other_participant_info",
         "other_study_info"
     ]
+
+    db_path: str = "therapy_labels.db"
+
+    finetuned_model_path: Optional[str] = None
+
+    focal_loss_alpha: float = 0.75
+    focal_loss_gamma: float = 2.0
+    focal_loss_class_weights: List[float] = [1.0] * 13
+
+    training_batch_size: int = 8
+    training_epochs: int = 10
+    training_learning_rate: float = 2e-5
+    training_warmup_steps: int = 100
+    training_patience: int = 3
+    training_dropout: float = 0.1
+
+    min_samples_per_category: int = 50
 
 
 settings = Settings()

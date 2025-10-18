@@ -13,7 +13,8 @@ class TherapyClassificationPipeline:
             categories=settings.categories,
             device=settings.device,
             confidence_threshold=settings.confidence_threshold,
-            max_categories=settings.max_categories_per_sentence
+            max_categories=settings.max_categories_per_sentence,
+            finetuned_model_path=settings.finetuned_model_path
         )
         self.aggregator = ResultAggregator(categories=settings.categories)
 
