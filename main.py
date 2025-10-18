@@ -11,7 +11,9 @@ class TherapyClassificationPipeline:
         self.classifier = TherapyClassifier(
             model_name=settings.model_name,
             categories=settings.categories,
-            device=settings.device
+            device=settings.device,
+            confidence_threshold=settings.confidence_threshold,
+            max_categories=settings.max_categories_per_sentence
         )
         self.aggregator = ResultAggregator(categories=settings.categories)
 

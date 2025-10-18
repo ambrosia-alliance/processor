@@ -5,7 +5,8 @@ import torch
 class Settings:
     model_name: str = "facebook/bart-large-mnli"
     device: str = "cuda" if torch.cuda.is_available() else "cpu"
-    confidence_threshold: float = 0.5
+    confidence_threshold: float = 0.2
+    max_categories_per_sentence: int = 2
     min_sentence_length: int = 10
 
     categories: List[str] = [
