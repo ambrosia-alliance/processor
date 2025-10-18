@@ -58,7 +58,7 @@ def print_results(results, title):
             print(f"  Avg Confidence: {data['avg_confidence']:.2%}")
             print(f"  Sentences:")
             for sentence in data["sentences"]:
-                print(f"    - {sentence['text'][:80]}...")
+                print(f"    - {sentence['text']}")
                 print(f"      (confidence: {sentence['confidence']:.2%})")
 
     print("\n" + "=" * 80)
