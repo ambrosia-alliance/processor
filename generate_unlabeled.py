@@ -30,38 +30,42 @@ CATEGORY_DESCRIPTIONS = {
 def create_system_prompt() -> str:
     categories_text = "\n".join([f"- {cat}: {desc}" for cat, desc in CATEGORY_DESCRIPTIONS.items()])
 
-    return f"""You are a medical research text generator. Generate realistic, diverse sentences or short paragraphs about medical therapies, clinical trials, and treatment outcomes.
+    return f"""You are a medical research text generator. Generate realistic, diverse SINGLE SENTENCES about medical therapies, clinical trials, and treatment outcomes.
 
 The text should cover these types of information:
 {categories_text}
 
-Generate realistic examples that sound like they come from:
-- Medical research papers
-- Clinical trial reports
-- Therapy descriptions
-- Treatment outcome studies
-- Patient information materials
+IMPORTANT CONSTRAINTS:
+- Each sample must be ONE complete sentence only (can be compound/complex, but still one sentence)
+- Each sentence should focus on 1-2 information types maximum
+- Keep sentences clear and focused, not overly packed with information
+- Sound like they come from medical research papers, clinical trial reports, or therapy descriptions
 
-Return ONLY a JSON array of strings (the text samples), nothing else."""
+Return ONLY a JSON array of strings (the sentence samples), nothing else."""
 
 
 def create_user_prompt(num_samples: int, target_categories: List[str] = None) -> str:
     if target_categories:
         cats = ", ".join(target_categories)
-        return f"""Generate {num_samples} realistic medical/therapy text samples that contain information about: {cats}.
+        return f"""Generate {num_samples} realistic medical/therapy SINGLE SENTENCES about: {cats}.
 
-Make each sample unique and realistic. Vary the medical conditions, treatments, and contexts.
+Requirements:
+- ONE sentence per sample (compound/complex sentences are fine)
+- Focus on 1-2 information types per sentence maximum
+- Clear, focused sentences
+- Vary medical conditions, treatments, and contexts
 
-Return exactly {num_samples} text samples as a JSON array of strings."""
+Return exactly {num_samples} sentences as a JSON array of strings."""
     else:
-        return f"""Generate {num_samples} realistic, diverse medical/therapy text samples covering various aspects of clinical research and treatment outcomes.
+        return f"""Generate {num_samples} realistic, diverse medical/therapy SINGLE SENTENCES covering various aspects of clinical research and treatment outcomes.
 
-Include variety in:
-- Medical conditions (autoimmune, neurological, oncological, psychiatric, etc.)
-- Treatment types (pharmaceutical, surgical, therapeutic procedures, etc.)
-- Study contexts (efficacy data, safety profiles, trial designs, patient demographics, etc.)
+Requirements:
+- ONE sentence per sample (compound/complex sentences are fine)
+- Each sentence should focus on 1-2 information types maximum
+- Clear, focused sentences
+- Include variety: different medical conditions, treatment types, and study contexts
 
-Return exactly {num_samples} text samples as a JSON array of strings."""
+Return exactly {num_samples} sentences as a JSON array of strings."""
 
 
 def generate_batch(client: OpenAI, num_samples: int, target_categories: List[str] = None) -> List[str]:
@@ -86,7 +90,7 @@ def generate_batch(client: OpenAI, num_samples: int, target_categories: List[str
                     ]
                 }
             ],
-            temperature=0.9,
+            temperature=0.7,
             max_tokens=2000
         )
 

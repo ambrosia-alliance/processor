@@ -30,32 +30,43 @@ CATEGORY_DESCRIPTIONS = {
 def create_system_prompt() -> str:
     categories_text = "\n".join([f"- {cat}: {desc}" for cat, desc in CATEGORY_DESCRIPTIONS.items()])
 
-    return f"""You are a medical research text generator. Generate realistic sentences or short paragraphs about medical therapies, clinical trials, and treatment outcomes.
+    return f"""You are a medical research text generator. Generate realistic SINGLE SENTENCES about medical therapies, clinical trials, and treatment outcomes.
 
 CATEGORIES:
 {categories_text}
 
-Your task is to generate realistic text samples that clearly contain information from one or more of these categories. The text should sound like it comes from medical research papers, clinical trial reports, or therapy descriptions.
+IMPORTANT CONSTRAINTS:
+- Each sample must be ONE complete sentence only (can be compound/complex, but still one sentence)
+- Each sample should focus on 1-2 categories maximum
+- Keep sentences clear and focused, not overly packed with information
+- The text should sound like it comes from medical research papers, clinical trial reports, or therapy descriptions
 
 Return your response as a JSON array of objects, where each object has:
-- "text": the generated sentence/paragraph
-- "labels": an object with category names as keys and boolean values (true if the category is clearly present in the text, false otherwise)
+- "text": the generated SINGLE sentence
+- "labels": an object with category names as keys and boolean values (true if clearly present, false otherwise)
 
 Generate diverse, realistic examples covering different therapies, conditions, and contexts."""
 
 
 def create_user_prompt(target_categories: List[str], num_samples: int, is_multi: bool) -> str:
     if is_multi:
-        return f"""Generate {num_samples} realistic medical/therapy text samples. Each sample should clearly contain information from 2-3 of these categories: {', '.join(target_categories)}.
+        return f"""Generate {num_samples} realistic medical/therapy SINGLE SENTENCES. Each sentence should contain information from AT MOST 2 of these categories: {', '.join(target_categories)}.
 
-Make the combinations natural and realistic (e.g., efficacy_rate + side_effect_risk, trial_design + num_participants + trial_length).
+Requirements:
+- ONE sentence per sample (compound/complex sentences are fine)
+- EXACTLY 2 categories per sentence (no more, no less)
+- Natural combinations (e.g., efficacy_rate + side_effect_risk, trial_design + num_participants)
+- Clear, focused sentences
 
 Return exactly {num_samples} samples in JSON format."""
     else:
         category = target_categories[0]
-        return f"""Generate {num_samples} realistic medical/therapy text samples. Each sample should clearly contain information about: {category} ({CATEGORY_DESCRIPTIONS[category]}).
+        return f"""Generate {num_samples} realistic medical/therapy SINGLE SENTENCES. Each sentence should focus on: {category} ({CATEGORY_DESCRIPTIONS[category]}).
 
-Each sample should focus primarily on this single category, though it's okay if other categories are minimally present.
+Requirements:
+- ONE sentence per sample (compound/complex sentences are fine)
+- Focus on the target category (it's okay if ONE other category is slightly present, but minimize this)
+- Clear, focused sentences
 
 Return exactly {num_samples} samples in JSON format."""
 
@@ -82,7 +93,7 @@ def generate_batch(client: OpenAI, target_categories: List[str], num_samples: in
                     ]
                 }
             ],
-            temperature=0.8,
+            temperature=0.7,
             max_tokens=2000
         )
 
