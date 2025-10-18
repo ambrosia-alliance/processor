@@ -80,44 +80,77 @@ class CLILabeler:
 
         labels = {}
 
-        print("Label each category (y=yes, n=no, s=skip sample, u=undo, q=quit):")
+        print("\nCategories:")
         print("-" * 70)
 
-        for idx, category in enumerate(settings.categories, 1):
+        hex_chars = "123456789abcd"
+        category_map = {}
+        pred_map = {}
+
+        for idx, category in enumerate(settings.categories):
+            hex_char = hex_chars[idx]
+            category_map[hex_char] = category
+
             pred_conf = None
             for pred in predictions:
                 if pred['category'] == category:
                     pred_conf = pred['confidence']
                     break
+            pred_map[category] = pred_conf
 
-            print(f"\n[{idx}/{len(settings.categories)}] {category.replace('_', ' ').title()}")
-            if pred_conf is not None:
-                print(f"    Model prediction: {pred_conf:.1%}")
+            pred_str = f" [{pred_conf:.1%}]" if pred_conf is not None else ""
+            print(f"  {hex_char}) {category.replace('_', ' ').title()}{pred_str}")
 
-            while True:
-                sys.stdout.write("    Your label (y/n/s/u/q): ")
-                sys.stdout.flush()
-                response = input().strip().lower()
+        print("-" * 70)
+        print("\nEnter positive categories (e.g. '13a' or '1 3 a')")
+        print("Commands: 's'=skip, 'u'=undo, 'q'=quit, Enter=all negative\n")
 
-                if response == 'q':
-                    print("\nQuitting...")
-                    return 'quit'
-                elif response == 'u':
-                    print("\nUndoing last sample...")
-                    return 'undo'
-                elif response == 's':
-                    print("\nSkipping this sample...")
-                    return 'skip'
-                elif response == 'y':
-                    labels[category] = (True, pred_conf)
-                    print("    ✓ Positive")
+        while True:
+            sys.stdout.write("Positive categories: ")
+            sys.stdout.flush()
+            response = input().strip().lower()
+
+            if response == 'q':
+                print("\nQuitting...")
+                return 'quit'
+            elif response == 'u':
+                print("\nUndoing last sample...")
+                return 'undo'
+            elif response == 's':
+                print("\nSkipping this sample...")
+                return 'skip'
+            elif response == '':
+                for category in settings.categories:
+                    labels[category] = (False, pred_map[category])
+                print("All categories marked as negative")
+                break
+            else:
+                response_clean = response.replace(' ', '').replace(',', '')
+
+                valid = True
+                selected = set()
+                for char in response_clean:
+                    if char in category_map:
+                        selected.add(char)
+                    else:
+                        print(f"✗ Invalid character '{char}'. Use 1-9, a-d")
+                        valid = False
+                        break
+
+                if valid:
+                    for category in settings.categories:
+                        labels[category] = (False, pred_map[category])
+
+                    for hex_char in selected:
+                        category = category_map[hex_char]
+                        labels[category] = (True, pred_map[category])
+
+                    if selected:
+                        print(f"✓ Positive: {', '.join(sorted(selected))}")
+                        print(f"  ({len(selected)} positive, {len(settings.categories) - len(selected)} negative)")
+                    else:
+                        print("✓ All negative")
                     break
-                elif response == 'n':
-                    labels[category] = (False, pred_conf)
-                    print("    ✓ Negative")
-                    break
-                else:
-                    print("    ✗ Invalid input. Use y/n/s/u/q")
 
         for category, (is_positive, confidence) in labels.items():
             self.db.add_label(sample_id, category, is_positive, confidence)
