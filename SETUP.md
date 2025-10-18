@@ -8,69 +8,54 @@
 pip install -r requirements.txt
 ```
 
-### 2. Start the API Server
+### 2. Run the Pipeline
 
 ```bash
-./start_api.sh
+python main.py
 ```
 
-Or manually:
+This will process a sample text and display the classification results.
 
-```bash
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
+### 3. Test Components
 
-### 3. Test the API
-
-In a new terminal:
-
-```bash
-python example_usage.py
-```
-
-Or visit the interactive documentation:
-- Swagger UI: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
-
-## Testing the Pipeline Directly
-
-To test the pipeline components without running the API:
+To test individual pipeline components:
 
 ```bash
 python test_pipeline.py
 ```
 
-## API Usage
+## Using the Pipeline in Your Code
 
-### Classification Endpoint
+```python
+from main import TherapyClassificationPipeline
 
-```bash
-curl -X POST "http://localhost:8000/classify" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "text": "Therapeutic Plasma Exchange showed 75% efficacy. The trial included 150 participants aged 40-65."
-  }'
-```
+pipeline = TherapyClassificationPipeline()
 
-### Health Check
+your_text = """
+Therapeutic Plasma Exchange showed 75% efficacy.
+The trial included 150 participants aged 40-65.
+Side effects were mild.
+"""
 
-```bash
-curl http://localhost:8000/health
-```
+results = pipeline.process(your_text)
 
-### List Categories
-
-```bash
-curl http://localhost:8000/categories
+for category, data in results.items():
+    if data["count"] > 0:
+        print(f"\n{category}:")
+        print(f"  Count: {data['count']}")
+        print(f"  Avg Confidence: {data['avg_confidence']:.2%}")
+        for sentence in data["sentences"]:
+            print(f"  - {sentence['text']}")
 ```
 
 ## Configuration
 
-The pipeline can be configured via environment variables or the `.env` file:
+Edit `app/config.py` to configure:
 
-- `MODEL_NAME`: HuggingFace model (default: facebook/bart-large-mnli)
-- `CONFIDENCE_THRESHOLD`: Minimum confidence score (default: 0.5)
-- `MIN_SENTENCE_LENGTH`: Minimum sentence length to process (default: 10)
+- `model_name`: HuggingFace model (default: facebook/bart-large-mnli)
+- `device`: CUDA or CPU (auto-detected)
+- `confidence_threshold`: Minimum confidence score (default: 0.5)
+- `min_sentence_length`: Minimum sentence length to process (default: 10)
 
 ## Project Structure
 
@@ -78,20 +63,17 @@ The pipeline can be configured via environment variables or the `.env` file:
 hackaging-processor/
 ├── app/
 │   ├── __init__.py
-│   ├── main.py              # FastAPI application
-│   ├── models.py            # Pydantic data models
 │   ├── config.py            # Configuration settings
 │   └── pipeline/
 │       ├── __init__.py
 │       ├── chunker.py       # Sentence tokenization
 │       ├── classifier.py    # BART-MNLI zero-shot classifier
 │       └── aggregator.py    # Result aggregation
-├── requirements.txt         # Python dependencies
-├── README.md               # Documentation
-├── SETUP.md               # This file
-├── start_api.sh           # Quick start script
-├── example_usage.py       # API usage example
-└── test_pipeline.py       # Pipeline testing script
+├── main.py                  # Main pipeline script
+├── test_pipeline.py        # Component testing script
+├── requirements.txt        # Python dependencies
+├── README.md              # Documentation
+└── SETUP.md              # This file
 ```
 
 ## Troubleshooting
@@ -107,10 +89,10 @@ nltk.download('punkt')
 
 ### CUDA/GPU Issues
 
-To force CPU usage, edit `.env`:
+To force CPU usage, edit `app/config.py`:
 
-```
-DEVICE=cpu
+```python
+device: str = "cpu"
 ```
 
 ### Model Download

@@ -1,6 +1,6 @@
-# Therapy Classification API
+# Therapy Classification Pipeline
 
-A REST API service that processes medical therapy text through zero-shot classification using BART-MNLI, returning aggregated category summaries.
+A Python ML pipeline that processes medical therapy text through zero-shot classification using BART-MNLI, returning aggregated category summaries.
 
 ## Features
 
@@ -8,11 +8,11 @@ A REST API service that processes medical therapy text through zero-shot classif
 - Zero-shot classification into 13 therapy-related categories
 - Aggregated results with confidence scores
 - PyTorch Lightning integration
-- FastAPI REST endpoints
+- Simple Python interface
 
 ## Categories
 
-The API classifies text into the following categories:
+The pipeline classifies text into the following categories:
 
 - efficacy_extent
 - efficacy_rate
@@ -36,85 +36,67 @@ pip install -r requirements.txt
 
 ## Usage
 
-Start the API server:
+### Run the main pipeline:
 
 ```bash
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+python main.py
 ```
 
-The API will be available at `http://localhost:8000`
+### Test individual components:
 
-## API Endpoints
-
-### POST /classify
-
-Classify therapy text into categories.
-
-**Request:**
-```json
-{
-  "text": "The therapeutic plasma exchange showed a 75% success rate in treating the condition. Patients experienced mild side effects including fatigue. The trial included 150 participants aged 40-65 years."
-}
+```bash
+python test_pipeline.py
 ```
 
-**Response:**
-```json
-{
-  "categories": {
-    "efficacy_rate": {
-      "count": 1,
-      "avg_confidence": 0.92,
-      "sentences": [
-        {
-          "text": "The therapeutic plasma exchange showed a 75% success rate in treating the condition.",
-          "confidence": 0.92
-        }
-      ]
-    },
-    "side_effect_severity": {
-      "count": 1,
-      "avg_confidence": 0.88,
-      "sentences": [...]
-    }
-  }
-}
+### Use in your own code:
+
+```python
+from main import TherapyClassificationPipeline
+
+pipeline = TherapyClassificationPipeline()
+
+text = """
+Your therapy description text here...
+"""
+
+results = pipeline.process(text)
+
+for category, data in results.items():
+    if data["count"] > 0:
+        print(f"{category}: {data['count']} sentences")
 ```
 
-### GET /health
+## Output Format
 
-Health check endpoint.
+The pipeline returns a dictionary with categories as keys:
 
-**Response:**
-```json
+```python
 {
-  "status": "healthy",
-  "model": "facebook/bart-large-mnli",
-  "device": "cpu"
-}
-```
-
-### GET /categories
-
-List all available classification categories.
-
-**Response:**
-```json
-{
-  "categories": ["efficacy_extent", "efficacy_rate", ...]
+  "efficacy_rate": {
+    "count": 1,
+    "avg_confidence": 0.92,
+    "sentences": [
+      {
+        "text": "The therapeutic plasma exchange showed a 75% success rate.",
+        "confidence": 0.92
+      }
+    ]
+  },
+  ...
 }
 ```
 
 ## Configuration
 
-Edit `.env` file to configure:
+Edit `app/config.py` to configure:
 
-- `MODEL_NAME`: HuggingFace model name
-- `CONFIDENCE_THRESHOLD`: Minimum confidence score
-- `MIN_SENTENCE_LENGTH`: Minimum sentence length to process
+- `model_name`: HuggingFace model name
+- `device`: CUDA or CPU
+- `confidence_threshold`: Minimum confidence score
+- `min_sentence_length`: Minimum sentence length to process
 
 ## Architecture
 
-- **FastAPI**: REST API framework
 - **PyTorch Lightning**: ML model wrapper
 - **BART-MNLI**: Zero-shot classification model
 - **NLTK**: Sentence tokenization

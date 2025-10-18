@@ -1,16 +1,12 @@
-from pydantic_settings import BaseSettings
 from typing import List
 import torch
 
 
-class Settings(BaseSettings):
+class Settings:
     model_name: str = "facebook/bart-large-mnli"
     device: str = "cuda" if torch.cuda.is_available() else "cpu"
     confidence_threshold: float = 0.5
     min_sentence_length: int = 10
-
-    api_title: str = "Therapy Classification API"
-    api_version: str = "1.0.0"
 
     categories: List[str] = [
         "efficacy_extent",
@@ -27,9 +23,6 @@ class Settings(BaseSettings):
         "other_participant_info",
         "other_study_info"
     ]
-
-    class Config:
-        env_file = ".env"
 
 
 settings = Settings()
