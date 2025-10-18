@@ -33,7 +33,7 @@ class Settings:
     focal_loss_gamma: float = 2.0
     focal_loss_class_weights: List[float] = [1.0] * 13
 
-    training_batch_size: int = 8
+    training_batch_size: int = 2
     training_epochs: int = 10
     training_learning_rate: float = 2e-5
     training_warmup_steps: int = 100
