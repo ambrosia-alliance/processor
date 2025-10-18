@@ -45,14 +45,19 @@ class TherapyClassifier(pl.LightningModule):
         """
         result = self.classifier(sentence, self.categories, multi_label=True)
 
+        label_score_pairs = list(zip(result['labels'], result['scores'], strict=True))
+        label_score_pairs.sort(key=lambda x: x[1], reverse=True)
+
         classifications = []
-        for label, score in zip(result['labels'], result['scores']):
-            if score >= self.confidence_threshold and len(classifications) < self.max_categories:
+        for label, score in label_score_pairs:
+            if score >= self.confidence_threshold:
                 classifications.append({
                     "sentence": sentence,
                     "category": label,
                     "confidence": score
                 })
+                if len(classifications) >= self.max_categories:
+                    break
 
         return classifications
 
