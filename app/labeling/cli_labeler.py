@@ -80,35 +80,44 @@ class CLILabeler:
 
         labels = {}
 
-        for category in settings.categories:
+        print("Label each category (y=yes, n=no, s=skip sample, u=undo, q=quit):")
+        print("-" * 70)
+
+        for idx, category in enumerate(settings.categories, 1):
             pred_conf = None
             for pred in predictions:
                 if pred['category'] == category:
                     pred_conf = pred['confidence']
                     break
 
-            prompt = f"  {category}"
+            print(f"\n[{idx}/{len(settings.categories)}] {category.replace('_', ' ').title()}")
             if pred_conf is not None:
-                prompt += f" [predicted: {pred_conf:.2%}]"
-            prompt += " (y/n/s/u/q): "
+                print(f"    Model prediction: {pred_conf:.1%}")
 
             while True:
-                response = input(prompt).strip().lower()
+                sys.stdout.write("    Your label (y/n/s/u/q): ")
+                sys.stdout.flush()
+                response = input().strip().lower()
 
                 if response == 'q':
+                    print("\nQuitting...")
                     return 'quit'
                 elif response == 'u':
+                    print("\nUndoing last sample...")
                     return 'undo'
                 elif response == 's':
+                    print("\nSkipping this sample...")
                     return 'skip'
                 elif response == 'y':
                     labels[category] = (True, pred_conf)
+                    print("    ✓ Positive")
                     break
                 elif response == 'n':
                     labels[category] = (False, pred_conf)
+                    print("    ✓ Negative")
                     break
                 else:
-                    print("    Invalid input. Use y/n/s/u/q")
+                    print("    ✗ Invalid input. Use y/n/s/u/q")
 
         for category, (is_positive, confidence) in labels.items():
             self.db.add_label(sample_id, category, is_positive, confidence)
