@@ -4,9 +4,27 @@ from collections import defaultdict
 
 class ResultAggregator:
     def __init__(self, categories: List[str]):
+        """
+        Initialize the ResultAggregator with a fixed list of category names used for result aggregation.
+        
+        Parameters:
+            categories (List[str]): Ordered list of category names that will be used as keys in the aggregated output; order is preserved.
+        """
         self.categories = categories
 
     def aggregate(self, classifications: List[List[Dict[str, any]]]) -> Dict[str, Dict]:
+        """
+        Aggregate classification entries into per-category summaries.
+        
+        Parameters:
+        	classifications (List[List[Dict[str, any]]]): Nested list where each inner list contains classification dicts for a sentence. Each classification dict must contain the keys `"category"` (str), `"confidence"` (float), and `"sentence"` (str).
+        
+        Returns:
+        	aggregated_results (Dict[str, Dict]): Mapping from each category name (from self.categories) to a summary dict with:
+        		- count (int): number of classification entries for the category
+        		- avg_confidence (float): average confidence for the category rounded to 4 decimal places
+        		- sentences (List[Dict[str, any]]): list of sentence entries, each with `"text"` (the sentence string) and `"confidence"` (the original confidence value)
+        """
         category_data = defaultdict(lambda: {
             "count": 0,
             "total_confidence": 0.0,
@@ -44,4 +62,3 @@ class ResultAggregator:
                 }
 
         return aggregated_results
-

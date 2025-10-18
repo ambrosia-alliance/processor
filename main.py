@@ -7,6 +7,14 @@ import json
 
 class TherapyClassificationPipeline:
     def __init__(self):
+        """
+        Initialize pipeline components for sentence chunking, classification, and result aggregation.
+        
+        Creates and assigns:
+        - `self.chunker`: SentenceChunker configured with the minimum sentence length from settings.
+        - `self.classifier`: TherapyClassifier configured with model name, categories, device, confidence threshold, and max categories per sentence from settings.
+        - `self.aggregator`: ResultAggregator initialized with categories from settings.
+        """
         self.chunker = SentenceChunker(min_length=settings.min_sentence_length)
         self.classifier = TherapyClassifier(
             model_name=settings.model_name,
@@ -77,4 +85,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
