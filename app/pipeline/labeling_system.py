@@ -56,19 +56,19 @@ class LabelingSystem:
         )
 
         if choice == "accept":
-            if sample.ensemble_prediction:
-                self._label_sample(sample, sample.ensemble_prediction)
-                self.console.print("[green]✓ Accepted ensemble prediction[/green]")
+            if sample.ensemble_predictions:
+                self._label_sample(sample, sample.ensemble_predictions)
+                self.console.print(f"[green]✓ Accepted: {', '.join(sample.ensemble_predictions)}[/green]")
                 return "labeled"
             else:
-                self.console.print("[yellow]No ensemble prediction available[/yellow]")
+                self.console.print("[yellow]No ensemble predictions available[/yellow]")
                 return "skipped"
 
         elif choice == "change":
-            label = self._get_category_selection()
-            if label:
-                self._label_sample(sample, label)
-                self.console.print(f"[green]✓ Labeled as: {label}[/green]")
+            labels = self._get_multi_category_selection()
+            if labels:
+                self._label_sample(sample, labels)
+                self.console.print(f"[green]✓ Labeled as: {', '.join(labels)}[/green]")
                 return "labeled"
             return "skipped"
 
@@ -85,35 +85,45 @@ class LabelingSystem:
     def _display_sample(self, sample: LabeledSample):
         panel_content = f"[bold white]{sample.sentence}[/bold white]\n\n"
 
-        panel_content += f"[cyan]Ensemble Prediction:[/cyan] {sample.ensemble_prediction}\n"
+        predictions_str = ', '.join(sample.ensemble_predictions) if sample.ensemble_predictions else "None"
+        panel_content += f"[cyan]Ensemble Predictions:[/cyan] {predictions_str}\n"
         panel_content += f"[cyan]Confidence:[/cyan] {sample.confidence:.2%}\n"
         panel_content += f"[cyan]Entropy:[/cyan] {sample.entropy:.3f}\n"
-        panel_content += f"[cyan]Agreement:[/cyan] {sample.agreement_score:.2%}\n\n"
+
+        if sample.agreement_scores:
+            panel_content += f"[cyan]Agreements:[/cyan]\n"
+            for label, score in sample.agreement_scores.items():
+                panel_content += f"  • {label}: {score:.2%}\n"
+        panel_content += "\n"
 
         if sample.model_predictions:
             panel_content += "[cyan]Individual Model Votes:[/cyan]\n"
-            for model, prediction in sample.model_predictions.items():
+            for model, predictions in sample.model_predictions.items():
                 model_short = model.split('/')[-1][:30]
-                panel_content += f"  • {model_short}: {prediction}\n"
+                preds_str = ', '.join(predictions) if isinstance(predictions, list) else str(predictions)
+                panel_content += f"  • {model_short}: {preds_str}\n"
 
         panel = Panel(panel_content, title="Sample Review", border_style="blue")
         self.console.print(panel)
 
-    def _get_category_selection(self) -> Optional[str]:
-        self.console.print("\n[cyan]Select category:[/cyan]")
+    def _get_multi_category_selection(self) -> List[str]:
+        self.console.print("\n[cyan]Select categories (comma-separated numbers):[/cyan]")
 
         for idx, category in enumerate(self.categories, 1):
             self.console.print(f"  {idx}. {category}")
 
-        choice = Prompt.ask(
-            "Enter number",
-            choices=[str(i) for i in range(1, len(self.categories) + 1)]
-        )
+        choice = Prompt.ask("Enter numbers (e.g., 1,3,5)")
 
-        return self.categories[int(choice) - 1]
+        try:
+            indices = [int(x.strip()) - 1 for x in choice.split(',')]
+            selected = [self.categories[i] for i in indices if 0 <= i < len(self.categories)]
+            return selected
+        except:
+            self.console.print("[red]Invalid input[/red]")
+            return []
 
-    def _label_sample(self, sample: LabeledSample, label: str):
-        self.db.update_sample(sample.id, label, needs_review=False)
+    def _label_sample(self, sample: LabeledSample, labels: List[str]):
+        self.db.update_sample(sample.id, labels, needs_review=False)
 
         updated_sample = self.db.get_sample_by_id(sample.id)
         self.tracker.update_metrics(updated_sample)
@@ -198,11 +208,11 @@ class LabelingSystem:
                 for sentence in sentences:
                     sample = LabeledSample(
                         sentence=sentence,
-                        ensemble_prediction=category,
-                        human_label=None,
+                        ensemble_predictions=[category],
+                        human_labels=[],
                         confidence=1.0,
                         entropy=0.0,
-                        agreement_score=1.0,
+                        agreement_scores={category: 1.0},
                         needs_review=True,
                         source="synthetic"
                     )

@@ -1,6 +1,6 @@
 from typing import Dict, List
 from collections import defaultdict
-from sklearn.metrics import precision_recall_fscore_support, accuracy_score
+from sklearn.metrics import precision_recall_fscore_support, multilabel_confusion_matrix
 import numpy as np
 from datetime import datetime
 from app.storage.database import LabelingDatabase
@@ -14,53 +14,48 @@ class AccuracyTracker:
         self.categories = settings.categories
 
     def update_metrics(self, sample: LabeledSample):
-        if not sample.human_label or not sample.ensemble_prediction:
+        if not sample.human_labels or not sample.ensemble_predictions:
             return
 
-        category = sample.human_label
+        for category in sample.human_labels:
+            labeled_samples = self.db.get_labeled_samples(category=category)
 
-        labeled_samples = self.db.get_labeled_samples(category=category)
+            if len(labeled_samples) < 2:
+                continue
 
-        if len(labeled_samples) == 0:
-            return
+            y_true = []
+            y_pred = []
 
-        y_true = []
-        y_pred = []
+            for s in labeled_samples:
+                y_true.append(1 if category in s.human_labels else 0)
+                y_pred.append(1 if category in s.ensemble_predictions else 0)
 
-        for s in labeled_samples:
-            y_true.append(s.human_label)
-            y_pred.append(s.ensemble_prediction)
-
-        metrics = self._calculate_metrics(category, y_true, y_pred)
-
-        self.db.upsert_category_metrics(metrics)
+            metrics = self._calculate_metrics(category, y_true, y_pred, len(labeled_samples))
+            self.db.upsert_category_metrics(metrics)
 
     def _calculate_metrics(
         self,
         category: str,
-        y_true: List[str],
-        y_pred: List[str]
+        y_true: List[int],
+        y_pred: List[int],
+        total_samples: int
     ) -> CategoryMetrics:
-        total_samples = len(y_true)
 
-        category_true = [1 if label == category else 0 for label in y_true]
-        category_pred = [1 if label == category else 0 for label in y_pred]
+        correct = sum(1 for t, p in zip(y_true, y_pred) if t == p and t == 1)
 
-        correct = sum(1 for t, p in zip(y_true, y_pred) if t == p and t == category)
-
-        if sum(category_true) == 0:
+        if sum(y_true) == 0:
             precision = 0.0
             recall = 0.0
             f1 = 0.0
         else:
             precision, recall, f1, _ = precision_recall_fscore_support(
-                category_true,
-                category_pred,
+                y_true,
+                y_pred,
                 average='binary',
                 zero_division=0
             )
 
-        accuracy = accuracy_score(y_true, y_pred)
+        accuracy = sum(1 for t, p in zip(y_true, y_pred) if t == p) / len(y_true) if y_true else 0.0
 
         can_auto_accept = (
             total_samples >= settings.min_samples_for_handoff and
@@ -84,13 +79,13 @@ class AccuracyTracker:
         for category in self.categories:
             labeled_samples = self.db.get_labeled_samples(category=category)
 
-            if not labeled_samples:
+            if len(labeled_samples) < 2:
                 continue
 
-            y_true = [s.human_label for s in labeled_samples]
-            y_pred = [s.ensemble_prediction for s in labeled_samples]
+            y_true = [1 if category in s.human_labels else 0 for s in labeled_samples]
+            y_pred = [1 if category in s.ensemble_predictions else 0 for s in labeled_samples]
 
-            metrics = self._calculate_metrics(category, y_true, y_pred)
+            metrics = self._calculate_metrics(category, y_true, y_pred, len(labeled_samples))
             self.db.upsert_category_metrics(metrics)
 
     def can_auto_accept(self, category: str) -> bool:
@@ -105,13 +100,14 @@ class AccuracyTracker:
         if prediction_result.get("needs_review", True):
             return True
 
-        category = prediction_result.get("ensemble_prediction")
-        if not category:
+        categories = prediction_result.get("ensemble_predictions", [])
+        if not categories:
             return True
 
-        if settings.human_review_enabled.get(category, True):
-            if not self.can_auto_accept(category):
-                return True
+        for category in categories:
+            if settings.human_review_enabled.get(category, True):
+                if not self.can_auto_accept(category):
+                    return True
 
         return False
 

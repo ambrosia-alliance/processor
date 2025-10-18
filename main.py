@@ -53,17 +53,17 @@ class EnsemblePipeline:
         for classification in classifications:
             sample = LabeledSample(
                 sentence=classification["sentence"],
-                ensemble_prediction=classification["ensemble_prediction"],
+                ensemble_predictions=classification["ensemble_predictions"],
                 confidence=classification["confidence"],
                 entropy=classification["entropy"],
-                agreement_score=classification["agreement_score"],
+                agreement_scores=classification["agreement_scores"],
                 model_predictions=classification["model_predictions"],
                 needs_review=classification["needs_review"],
                 source="real"
             )
 
             if auto_accept and not self.tracker.should_review(classification):
-                sample.human_label = sample.ensemble_prediction
+                sample.human_labels = sample.ensemble_predictions
                 sample.needs_review = False
 
             self.db.insert_sample(sample)
