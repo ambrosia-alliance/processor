@@ -5,7 +5,7 @@ import torch
 class Settings:
     model_name: str = "facebook/bart-large-mnli"
     device: str = "cuda" if torch.cuda.is_available() else "cpu"
-    confidence_threshold: float = 0.2
+    confidence_threshold: float = 0.5
     max_categories_per_sentence: int = 2
     min_sentence_length: int = 10
 
@@ -41,6 +41,9 @@ class Settings:
     training_dropout: float = 0.1
 
     min_samples_per_category: int = 50
+
+    api_host: str = "0.0.0.0"
+    api_port: int = 5000
 
 
 settings = Settings()

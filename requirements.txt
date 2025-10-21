@@ -4,3 +4,5 @@ pytorch-lightning==2.5.5
 nltk==3.8.1
 scikit-learn==1.7.2
 openai==2.6.0
+flask==3.0.0
+flask-cors==4.0.0
