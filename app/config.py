@@ -27,7 +27,7 @@ class Settings:
 
     db_path: str = "therapy_labels.db"
 
-    finetuned_model_path: Optional[str] = "../models/finetuned/model_20251021_113816"
+    finetuned_model_path: Optional[str] = "models/finetuned/model_20251021_113816"
 
     focal_loss_alpha: float = 0.75
     focal_loss_gamma: float = 2.0
