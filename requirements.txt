@@ -1,6 +1,6 @@
 transformers==4.35.2
-torch
+torch==2.9.0
 pytorch-lightning==2.5.5
 nltk==3.8.1
-scikit-learn
-
+scikit-learn==1.7.2
+openai==2.6.0
