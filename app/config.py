@@ -1,5 +1,6 @@
 from typing import List, Optional
 import torch
+import os
 
 
 class Settings:
@@ -27,7 +28,8 @@ class Settings:
 
     db_path: str = "therapy_labels.db"
 
-    finetuned_model_path: Optional[str] = "models/finetuned/model_20251021_113816"
+    _base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    finetuned_model_path: Optional[str] = os.path.join(_base_dir, "models/finetuned/model_20251021_113816")
 
     focal_loss_alpha: float = 0.75
     focal_loss_gamma: float = 2.0
