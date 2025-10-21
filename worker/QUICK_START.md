@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-1. Processor API running on `http://localhost:5000`
+1. Python dependencies installed (`pip install -r requirements.txt` in processor/)
 2. PostgreSQL databases configured
 3. Articles in main database with `processed = false`
 
@@ -26,7 +26,8 @@ npm run dev
 
 ### Processor Health
 ```bash
-curl http://localhost:5000/health
+cd ..
+python classify.py --health
 ```
 
 ### Database Stats
@@ -43,7 +44,8 @@ GROUP BY category;
 ```env
 SOURCE_DATABASE_URL=postgresql://...     # Main app database
 LOCAL_DATABASE_URL=postgresql://...      # Worker's database
-PROCESSOR_URL=http://localhost:5000      # Processor API
+PYTHON_PATH=python                       # Python executable
+PROCESSOR_SCRIPT_PATH=../classify.py     # Classifier script
 POLL_INTERVAL_MS=5000                    # Poll every 5 seconds
 BATCH_SIZE=10                            # Process 10 articles at a time
 ```
@@ -52,7 +54,7 @@ BATCH_SIZE=10                            # Process 10 articles at a time
 
 1. Polls main database for unprocessed articles
 2. Fetches full XML from Europe PMC
-3. Classifies sentences (50% confidence threshold)
+3. Calls Python classifier directly (50% confidence threshold)
 4. Stores classifications locally
 5. Marks articles as processed
 

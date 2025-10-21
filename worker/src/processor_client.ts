@@ -1,4 +1,4 @@
-import axios, { AxiosInstance } from 'axios';
+import { spawn } from 'child_process';
 
 export interface Classification {
     sentence: string;
@@ -21,42 +21,97 @@ export interface ProcessorHealth {
 }
 
 export class ProcessorClient {
-    private client: AxiosInstance;
-    private baseUrl: string;
+    private command: string;
+    private args: string[];
 
-    constructor(baseUrl: string) {
-        this.baseUrl = baseUrl;
-        this.client = axios.create({
-            baseURL: baseUrl,
-            timeout: 300000,
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
+    constructor(pythonPath: string = 'python', scriptPath: string = '../classify.py') {
+        if (pythonPath.startsWith('ssh ')) {
+            const parts = pythonPath.split(' ');
+            this.command = parts[0];
+            this.args = [...parts.slice(1), scriptPath];
+        } else {
+            this.command = pythonPath;
+            this.args = [scriptPath];
+        }
     }
 
     async health(): Promise<ProcessorHealth> {
-        try {
-            const response = await this.client.get<ProcessorHealth>('/health');
-            return response.data;
-        } catch (error) {
-            throw new Error(`Processor health check failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        }
+        return new Promise((resolve, reject) => {
+            const healthArgs = [...this.args, '--health'];
+            const process = spawn(this.command, healthArgs);
+
+            let stdout = '';
+            let stderr = '';
+
+            process.stdout.on('data', (data) => {
+                stdout += data.toString();
+            });
+
+            process.stderr.on('data', (data) => {
+                stderr += data.toString();
+            });
+
+            process.on('close', (code) => {
+                if (code !== 0) {
+                    reject(new Error(`Health check failed: ${stderr}`));
+                    return;
+                }
+
+                try {
+                    const health = JSON.parse(stdout);
+                    resolve(health);
+                } catch (error) {
+                    reject(new Error(`Failed to parse health response: ${error instanceof Error ? error.message : 'Unknown error'}`));
+                }
+            });
+
+            process.on('error', (error) => {
+                reject(new Error(`Failed to spawn process: ${error.message}`));
+            });
+        });
     }
 
     async classify(text: string): Promise<ClassificationResponse> {
-        try {
-            const response = await this.client.post<ClassificationResponse>('/classify', {
-                text
+        return new Promise((resolve, reject) => {
+            const process = spawn(this.command, this.args);
+
+            let stdout = '';
+            let stderr = '';
+
+            process.stdout.on('data', (data) => {
+                stdout += data.toString();
             });
-            return response.data;
-        } catch (error) {
-            if (axios.isAxiosError(error)) {
-                const message = error.response?.data?.error || error.message;
-                throw new Error(`Classification failed: ${message}`);
-            }
-            throw new Error(`Classification failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        }
+
+            process.stderr.on('data', (data) => {
+                stderr += data.toString();
+            });
+
+            process.stdin.write(text);
+            process.stdin.end();
+
+            process.on('close', (code) => {
+                if (code !== 0) {
+                    try {
+                        const errorData = JSON.parse(stderr);
+                        reject(new Error(`Classification failed: ${errorData.error}`));
+                    } catch {
+                        reject(new Error(`Classification failed: ${stderr}`));
+                    }
+                    return;
+                }
+
+                try {
+                    const result = JSON.parse(stdout);
+                    resolve(result);
+                } catch (error) {
+                    reject(new Error(`Failed to parse classification response: ${error instanceof Error ? error.message : 'Unknown error'}`));
+                }
+            });
+
+            process.on('error', (error) => {
+                reject(new Error(`Failed to spawn process: ${error.message}`));
+            });
+        });
     }
 
     async isHealthy(): Promise<boolean> {
@@ -69,7 +124,6 @@ export class ProcessorClient {
     }
 }
 
-export function createProcessorClient(baseUrl: string): ProcessorClient {
-    return new ProcessorClient(baseUrl);
+export function createProcessorClient(pythonPath?: string, scriptPath?: string): ProcessorClient {
+    return new ProcessorClient(pythonPath, scriptPath);
 }
-

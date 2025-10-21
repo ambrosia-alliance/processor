@@ -8,7 +8,8 @@ import { parseEuropePMCXML } from './xml_parser.js';
 interface Config {
     sourceDbUrl: string;
     localDbUrl: string;
-    processorUrl: string;
+    pythonPath: string;
+    processorScriptPath: string;
     pollIntervalMs: number;
     batchSize: number;
 }
@@ -16,7 +17,8 @@ interface Config {
 function loadConfig(): Config {
     const sourceDbUrl = process.env.SOURCE_DATABASE_URL;
     const localDbUrl = process.env.LOCAL_DATABASE_URL;
-    const processorUrl = process.env.PROCESSOR_URL || 'http://localhost:5000';
+    const pythonPath = process.env.PYTHON_PATH || 'python';
+    const processorScriptPath = process.env.PROCESSOR_SCRIPT_PATH || '../classify.py';
     const pollIntervalMs = parseInt(process.env.POLL_INTERVAL_MS || '5000');
     const batchSize = parseInt(process.env.BATCH_SIZE || '10');
 
@@ -31,7 +33,8 @@ function loadConfig(): Config {
     return {
         sourceDbUrl,
         localDbUrl,
-        processorUrl,
+        pythonPath,
+        processorScriptPath,
         pollIntervalMs,
         batchSize
     };
@@ -48,12 +51,13 @@ class ArticleProcessorWorker {
         this.config = config;
         this.sourceDb = createSourceDatabase(config.sourceDbUrl);
         this.localDb = createLocalDatabase(config.localDbUrl);
-        this.processorClient = createProcessorClient(config.processorUrl);
+        this.processorClient = createProcessorClient(config.pythonPath, config.processorScriptPath);
     }
 
     async start(): Promise<void> {
         console.log('Starting Article Processor Worker...');
-        console.log(`Processor URL: ${this.config.processorUrl}`);
+        console.log(`Python Path: ${this.config.pythonPath}`);
+        console.log(`Processor Script: ${this.config.processorScriptPath}`);
         console.log(`Poll Interval: ${this.config.pollIntervalMs}ms`);
         console.log(`Batch Size: ${this.config.batchSize}`);
 
@@ -62,7 +66,7 @@ class ArticleProcessorWorker {
 
         const isHealthy = await this.processorClient.isHealthy();
         if (!isHealthy) {
-            throw new Error('Processor API is not healthy. Please start the processor service.');
+            throw new Error('Processor script is not healthy. Check Python path and dependencies.');
         }
 
         const health = await this.processorClient.health();

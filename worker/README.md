@@ -7,7 +7,7 @@ Worker service that processes articles from Europe PMC through the therapy class
 This worker:
 1. Polls the main database for unprocessed articles
 2. Fetches full text XML from Europe PMC
-3. Sends text to the processor API for classification
+3. Calls the Python classifier directly via subprocess
 4. Stores classifications in a local PostgreSQL database
 5. Marks articles as processed
 
@@ -30,7 +30,8 @@ cp env.example .env
 Edit `.env`:
 - `SOURCE_DATABASE_URL`: Main application database (read articles)
 - `LOCAL_DATABASE_URL`: Worker's local database (store classifications)
-- `PROCESSOR_URL`: URL of the processor API
+- `PYTHON_PATH`: Path to Python executable (default: python)
+- `PROCESSOR_SCRIPT_PATH`: Path to classify.py script (default: ../classify.py)
 - `POLL_INTERVAL_MS`: How often to check for new articles (default: 5000ms)
 - `BATCH_SIZE`: How many articles to process per batch (default: 10)
 
@@ -40,13 +41,13 @@ Edit `.env`:
 npm run db:init
 ```
 
-### 4. Start Processor API
+### 4. Install Python Dependencies
 
 In the processor directory:
 
 ```bash
 cd ..
-python api.py
+pip install -r requirements.txt
 ```
 
 ## Running
@@ -67,7 +68,7 @@ npm start
 ## Architecture
 
 ```
-Main DB (articles) → Worker → Processor API → Worker Local DB (classifications)
+Main DB (articles) → Worker → Python Script (subprocess) → Worker Local DB (classifications)
 ```
 
 ## Database Schema
