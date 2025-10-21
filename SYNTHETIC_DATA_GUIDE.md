@@ -2,7 +2,7 @@
 
 ## Overview
 
-The `generate_synthetic.py` script uses Nebius AI (DeepSeek-V3) to generate realistic labeled therapy classification data for training and testing.
+The `generate_synthetic.py` script uses Nebius AI (DeepSeek-V3) to generate realistic labeled therapy classification data focused on Therapeutic Plasma Exchange (TPE) and longevity research for training and testing.
 
 ## Setup
 
@@ -18,7 +18,7 @@ source hackaging/bin/activate
 
 ## Usage
 
-### Basic Usage (Default: 130 samples, 30% multi-category)
+### Basic Usage (Default: 390 samples, 30% multi-category)
 ```bash
 python generate_synthetic.py
 ```
@@ -35,16 +35,17 @@ python generate_synthetic.py --samples 200 --multi-ratio 0.4
 
 ### Options
 - `--db PATH`: Database path (default: therapy_labels.db)
-- `--samples N`: Total number of samples to generate (default: 130)
+- `--samples N`: Total number of samples to generate (default: 390)
 - `--multi-ratio F`: Ratio of multi-category samples, 0.0-1.0 (default: 0.3)
 - `--dry-run`: Preview generation without inserting to database
 
 ## What It Does
 
-1. **Generates Single-Category Samples**: Creates ~7 samples per category (13 categories total = 91 samples)
-2. **Generates Multi-Category Samples**: Creates ~40 samples with 2-3 relevant categories
+1. **Generates Single-Category Samples**: Creates ~21 samples per category (13 categories total = 273 samples)
+2. **Generates Multi-Category Samples**: Creates ~117 samples with 2-3 relevant categories
 3. **Inserts to Database**: Adds samples with labels and marks them as labeled
-4. **Source Tag**: All synthetic samples are tagged with source "synthetic_nebius_v1"
+4. **Source Tag**: All synthetic samples are tagged with source "synthetic_tpe_longevity_v1"
+5. **Focus**: All samples are focused on Therapeutic Plasma Exchange (TPE) and longevity research
 
 ## Categories Covered
 
@@ -70,7 +71,7 @@ After generation, verify the data was inserted:
 ```bash
 sqlite3 therapy_labels.db
 
-SELECT COUNT(*) FROM samples WHERE source = 'synthetic_nebius_v1';
+SELECT COUNT(*) FROM samples WHERE source = 'synthetic_tpe_longevity_v1';
 SELECT category, COUNT(*) FROM labels GROUP BY category;
 .quit
 ```
@@ -85,39 +86,56 @@ with DatabaseManager('therapy_labels.db') as db:
         print(f"{category}: {counts['total']} total ({counts['positive']} positive)")
 ```
 
+## Focus Areas
+
+The generator creates sentences focused on:
+
+### TPE Benefits for Longevity:
+- Biological age reduction (1.32-2.61 year reductions documented)
+- Heavy metal and toxin detoxification (25-100% reductions)
+- Immune system rebalancing
+- Improved cognitive function
+- Blood flow improvements
+
+### TPE Side Effects:
+- Low blood pressure and dizziness
+- Infection risk from IV lines
+- Blood clotting and bleeding complications
+- Allergic reactions to replacement fluids
+
 ## Example Output
 
 ```
 Generation Plan:
-  Total samples: 130
-  Single-category: 91 (7 per category)
-  Multi-category: 39
+  Total samples: 390
+  Single-category: 273 (21 per category)
+  Multi-category: 117
   Dry run: False
 
 Generating single-category samples...
-  [1/13] Generating 7 samples for 'efficacy_extent'...
-    Generated 7 samples
-  [2/13] Generating 7 samples for 'efficacy_rate'...
-    Generated 7 samples
+  [1/13] Generating 21 samples for 'efficacy_extent'...
+    Generated 21 samples
+  [2/13] Generating 21 samples for 'efficacy_rate'...
+    Generated 21 samples
   ...
 
 Generating multi-category samples...
-  [1/8] Generating 5 multi-category samples...
+  [1/24] Generating 5 multi-category samples...
     Generated 5 samples
   ...
 
-Generated 130 total samples
+Generated 390 total samples
 
 Inserting into database...
-Inserted 130 samples
+Inserted 390 samples
 
 Category distribution:
-  efficacy_extent: 12
-  efficacy_rate: 15
-  side_effect_severity: 10
+  efficacy_extent: 35
+  efficacy_rate: 42
+  side_effect_severity: 38
   ...
 
-Multi-category samples: 41 (31.5%)
+Multi-category samples: 120 (30.8%)
 ```
 
 ## Tips
@@ -125,6 +143,7 @@ Multi-category samples: 41 (31.5%)
 - Start with `--dry-run` to preview before inserting
 - Use smaller `--samples` values for testing
 - Adjust `--multi-ratio` based on your training needs
-- The generator uses temperature=0.8 for diverse outputs
-- Each run generates fresh, unique samples
+- The generator uses temperature=0.7 for diverse outputs
+- Each run generates fresh, unique samples focused on TPE and longevity
+- All samples include realistic data from actual TPE research studies
 
