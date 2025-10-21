@@ -62,12 +62,19 @@ def classify():
     if not text or not isinstance(text, str):
         return jsonify({'error': 'Text must be a non-empty string'}), 400
 
+    print(f"[Processor] Received text: {len(text)} characters")
+
     sentences = chunker.chunk(text)
     if not sentences:
         return jsonify({'classifications': [], 'sentence_count': 0})
 
+    print(f"[Processor] Chunked into {len(sentences)} sentences")
+
     results = []
     for idx, sentence in enumerate(sentences):
+        if idx % 10 == 0:
+            print(f"[Processor] Processing sentence {idx+1}/{len(sentences)}")
+
         classifications = classifier.classify_sentence(sentence)
         for classification in classifications:
             results.append({
@@ -76,6 +83,8 @@ def classify():
                 'category': classification['category'],
                 'confidence': float(classification['confidence'])
             })
+
+    print(f"[Processor] Classification complete: {len(results)} classifications found")
 
     return jsonify({
         'classifications': results,
