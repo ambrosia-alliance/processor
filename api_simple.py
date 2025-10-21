@@ -17,11 +17,17 @@ def init_models():
     global chunker, classifier
     if chunker is None:
         print("Initializing models...")
+        print(f"Config finetuned_model_path: {settings.finetuned_model_path}")
+        print(f"Path exists: {os.path.exists(settings.finetuned_model_path) if settings.finetuned_model_path else 'N/A'}")
+
         chunker = SentenceChunker(min_length=settings.min_sentence_length)
 
         finetuned_model_path = None
         if settings.finetuned_model_path and os.path.exists(settings.finetuned_model_path):
             finetuned_model_path = settings.finetuned_model_path
+            print(f"Using finetuned model: {finetuned_model_path}")
+        else:
+            print("Finetuned model not found, using zero-shot")
 
         classifier = TherapyClassifier(
             model_name=settings.model_name,
@@ -31,7 +37,7 @@ def init_models():
             max_categories=settings.max_categories_per_sentence,
             finetuned_model_path=finetuned_model_path
         )
-        print("Models initialized!")
+        print(f"Models initialized! Classifier using finetuned: {classifier.use_finetuned}")
 
 @app.route('/health', methods=['GET'])
 def health():
