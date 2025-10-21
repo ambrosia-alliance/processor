@@ -18,11 +18,11 @@ def init_models():
     if chunker is None:
         print("Initializing models...")
         chunker = SentenceChunker(min_length=settings.min_sentence_length)
-        
+
         finetuned_model_path = None
         if settings.finetuned_model_path and os.path.exists(settings.finetuned_model_path):
             finetuned_model_path = settings.finetuned_model_path
-        
+
         classifier = TherapyClassifier(
             model_name=settings.model_name,
             categories=settings.categories,
@@ -47,19 +47,19 @@ def health():
 @app.route('/classify', methods=['POST'])
 def classify():
     init_models()
-    
+
     data = request.json
     if not data or 'text' not in data:
         return jsonify({'error': 'Missing text field'}), 400
-    
+
     text = data['text']
     if not text or not isinstance(text, str):
         return jsonify({'error': 'Text must be a non-empty string'}), 400
-    
+
     sentences = chunker.chunk(text)
     if not sentences:
         return jsonify({'classifications': [], 'sentence_count': 0})
-    
+
     results = []
     for idx, sentence in enumerate(sentences):
         classifications = classifier.classify_sentence(sentence)
@@ -70,7 +70,7 @@ def classify():
                 'category': classification['category'],
                 'confidence': float(classification['confidence'])
             })
-    
+
     return jsonify({
         'classifications': results,
         'sentence_count': len(sentences)
