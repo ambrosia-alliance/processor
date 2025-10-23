@@ -1,11 +1,12 @@
 from typing import List, Optional
 import torch
+import os
 
 
 class Settings:
     model_name: str = "facebook/bart-large-mnli"
     device: str = "cuda" if torch.cuda.is_available() else "cpu"
-    confidence_threshold: float = 0.2
+    confidence_threshold: float = 0.5
     max_categories_per_sentence: int = 2
     min_sentence_length: int = 10
 
@@ -27,7 +28,8 @@ class Settings:
 
     db_path: str = "therapy_labels.db"
 
-    finetuned_model_path: Optional[str] = "../models/finetuned/model_20251018_232600"
+    _base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    finetuned_model_path: Optional[str] = os.path.join(_base_dir, "models/finetuned/model_20251021_113816")
 
     focal_loss_alpha: float = 0.75
     focal_loss_gamma: float = 2.0
@@ -41,6 +43,9 @@ class Settings:
     training_dropout: float = 0.1
 
     min_samples_per_category: int = 50
+
+    api_host: str = "0.0.0.0"
+    api_port: int = 5000
 
 
 settings = Settings()

@@ -30,7 +30,24 @@ CATEGORY_DESCRIPTIONS = {
 def create_system_prompt() -> str:
     categories_text = "\n".join([f"- {cat}: {desc}" for cat, desc in CATEGORY_DESCRIPTIONS.items()])
 
-    return f"""You are a medical research text generator. Generate realistic SINGLE SENTENCES about medical therapies, clinical trials, and treatment outcomes.
+    return f"""You are a medical research text generator specializing in longevity therapies and anti-aging treatments. Generate realistic SINGLE SENTENCES about Therapeutic Plasma Exchange (TPE), plasmapheresis, and related longevity interventions.
+
+FOCUS AREA - THERAPEUTIC PLASMA EXCHANGE (TPE) FOR LONGEVITY:
+TPE involves removing patient plasma and replacing it with albumin or donor plasma to eliminate harmful substances like autoantibodies, immune complexes, and pro-inflammatory cytokines.
+
+KEY BENEFITS TO EMPHASIZE:
+- Biological age reduction (studies show 1.32-2.61 year reductions)
+- Heavy metal and toxin detoxification (25-100% reduction in aluminum, mercury, lead, parabens, pesticides)
+- Immune system rebalancing and reduced chronic inflammation
+- Improved cognitive function and reduced neurotoxic proteins
+- Blood flow improvements
+
+KEY SIDE EFFECTS TO INCLUDE:
+- Low blood pressure and dizziness
+- Infection risk from IV lines
+- Blood clotting and bleeding complications
+- Allergic reactions to replacement fluids
+- Generally well-tolerated with low overall risk
 
 CATEGORIES:
 {categories_text}
@@ -39,34 +56,38 @@ IMPORTANT CONSTRAINTS:
 - Each sample must be ONE complete sentence only (can be compound/complex, but still one sentence)
 - Each sample should focus on 1-2 categories maximum
 - Keep sentences clear and focused, not overly packed with information
-- The text should sound like it comes from medical research papers, clinical trial reports, or therapy descriptions
+- The text should sound like it comes from longevity research papers, anti-aging clinical trials, or TPE therapy descriptions
+- Include specific metrics when relevant (percentages, age reductions, durations)
+- Mix TPE with other longevity therapies occasionally for realism
 
 Return your response as a JSON array of objects, where each object has:
 - "text": the generated SINGLE sentence
 - "labels": an object with category names as keys and boolean values (true if clearly present, false otherwise)
 
-Generate diverse, realistic examples covering different therapies, conditions, and contexts."""
+Generate diverse, realistic examples primarily focused on TPE and longevity research."""
 
 
 def create_user_prompt(target_categories: List[str], num_samples: int, is_multi: bool) -> str:
     if is_multi:
-        return f"""Generate {num_samples} realistic medical/therapy SINGLE SENTENCES. Each sentence should contain information from AT MOST 2 of these categories: {', '.join(target_categories)}.
+        return f"""Generate {num_samples} realistic Therapeutic Plasma Exchange (TPE) and longevity therapy SINGLE SENTENCES. Each sentence should contain information from AT MOST 2 of these categories: {', '.join(target_categories)}.
 
 Requirements:
 - ONE sentence per sample (compound/complex sentences are fine)
 - EXACTLY 2 categories per sentence (no more, no less)
 - Natural combinations (e.g., efficacy_rate + side_effect_risk, trial_design + num_participants)
-- Clear, focused sentences
+- Clear, focused sentences about TPE, plasmapheresis, or related longevity interventions
+- Include specific data from TPE research when relevant
 
 Return exactly {num_samples} samples in JSON format."""
     else:
         category = target_categories[0]
-        return f"""Generate {num_samples} realistic medical/therapy SINGLE SENTENCES. Each sentence should focus on: {category} ({CATEGORY_DESCRIPTIONS[category]}).
+        return f"""Generate {num_samples} realistic Therapeutic Plasma Exchange (TPE) and longevity therapy SINGLE SENTENCES. Each sentence should focus on: {category} ({CATEGORY_DESCRIPTIONS[category]}).
 
 Requirements:
 - ONE sentence per sample (compound/complex sentences are fine)
 - Focus on the target category (it's okay if ONE other category is slightly present, but minimize this)
-- Clear, focused sentences
+- Clear, focused sentences about TPE, plasmapheresis, or related longevity interventions
+- Include specific data from TPE research when relevant
 
 Return exactly {num_samples} samples in JSON format."""
 
@@ -133,7 +154,7 @@ def generate_batch(client: OpenAI, target_categories: List[str], num_samples: in
         return []
 
 
-def insert_samples_to_db(db: DatabaseManager, samples: List[Dict], source: str = "synthetic_nebius_v1"):
+def insert_samples_to_db(db: DatabaseManager, samples: List[Dict], source: str = "synthetic_tpe_longevity_v1"):
     inserted_count = 0
 
     for sample in samples:
@@ -155,7 +176,7 @@ def insert_samples_to_db(db: DatabaseManager, samples: List[Dict], source: str =
     return inserted_count
 
 
-def generate_synthetic_data(db_path: str, total_samples: int = 130, multi_ratio: float = 0.3, dry_run: bool = False):
+def generate_synthetic_data(db_path: str, total_samples: int = 390, multi_ratio: float = 0.3, dry_run: bool = False):
     api_key = os.environ.get("NEBIUS_API_KEY")
     if not api_key:
         print("Error: NEBIUS_API_KEY environment variable not set")
@@ -251,7 +272,7 @@ def generate_synthetic_data(db_path: str, total_samples: int = 130, multi_ratio:
 def main():
     parser = argparse.ArgumentParser(description="Generate synthetic labeled data using Nebius AI")
     parser.add_argument('--db', default=settings.db_path, help='Database path')
-    parser.add_argument('--samples', type=int, default=130, help='Total number of samples to generate')
+    parser.add_argument('--samples', type=int, default=390, help='Total number of samples to generate')
     parser.add_argument('--multi-ratio', type=float, default=0.3, help='Ratio of multi-category samples (0.0-1.0)')
     parser.add_argument('--dry-run', action='store_true', help='Preview generation without inserting to database')
 
